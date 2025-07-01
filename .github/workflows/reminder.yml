@@ -1,0 +1,77 @@
+name: LinkAja Reminder Bot
+
+on:
+  # Automatic schedule
+  schedule:
+    # Clock IN - 01:00 UTC = 08:00 WIB (Senin-Jumat)
+    - cron: '0 1 * * 1-5'
+    # Clock OUT - 10:00 UTC = 17:00 WIB (Senin-Jumat)
+    - cron: '0 10 * * 1-5'
+  
+  # Manual trigger (untuk testing)
+  workflow_dispatch:
+    inputs:
+      command:
+        description: 'Command to run'
+        required: true
+        default: 'test'
+        type: choice
+        options:
+        - test
+        - clock_in
+        - clock_out
+
+jobs:
+  send-reminder:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Download code
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    # Setup Node.js
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    # Install dependencies
+    - name: Install dependencies
+      run: |
+        npm install
+        npm run build
+    
+    # Determine which command to run
+    - name: Determine command
+      id: command
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "cmd=${{ github.event.inputs.command }}" >> $GITHUB_OUTPUT
+        else
+          # Check time to determine if clock_in or clock_out
+          hour=$(date -u +%H)
+          if [ "$hour" = "01" ]; then
+            echo "cmd=clock_in" >> $GITHUB_OUTPUT
+          elif [ "$hour" = "10" ]; then
+            echo "cmd=clock_out" >> $GITHUB_OUTPUT
+          else
+            echo "cmd=test" >> $GITHUB_OUTPUT
+          fi
+        fi
+    
+    # Run the bot
+    - name: Run reminder bot
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        npm run start ${{ steps.command.outputs.cmd }}
+    
+    # Log success
+    - name: Log result
+      run: |
+        echo "✅ Reminder sent successfully!"
+        echo "Command: ${{ steps.command.outputs.cmd }}"
+        echo "Time: $(date)"
