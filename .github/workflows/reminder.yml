@@ -1,14 +1,14 @@
-name: LinkAja Reminder Bot
+name: Absensu Clock Reminder Bot
 
 on:
   # Automatic schedule
   schedule:
-    # Clock IN - 01:00 UTC = 08:00 WIB (Senin-Jumat)
+    # Clock IN - 01:00 UTC = 08:00 WIB (Monday-Friday)
     - cron: '0 1 * * 1-5'
-    # Clock OUT - 10:00 UTC = 17:00 WIB (Senin-Jumat)
+    # Clock OUT - 10:00 UTC = 17:00 WIB (Monday-Friday)
     - cron: '0 10 * * 1-5'
   
-  # Manual trigger (untuk testing)
+  # Manual trigger for testing
   workflow_dispatch:
     inputs:
       command:
@@ -20,37 +20,40 @@ on:
         - test
         - clock_in
         - clock_out
+        - motivational
+        - humor
+        - wisdom
 
 jobs:
   send-reminder:
     runs-on: ubuntu-latest
     
     steps:
-    # Download code
-    - name: Checkout code
+    # Download your code
+    - name: 📥 Checkout repository
       uses: actions/checkout@v4
     
-    # Setup Node.js
-    - name: Setup Node.js
+    # Setup Node.js environment
+    - name: 🟢 Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'npm'
     
-    # Install dependencies
-    - name: Install dependencies
+    # Install dependencies and build
+    - name: 📦 Install dependencies
       run: |
-        npm install
+        npm ci
         npm run build
     
     # Determine which command to run
-    - name: Determine command
+    - name: 🎯 Determine command
       id: command
       run: |
         if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
           echo "cmd=${{ github.event.inputs.command }}" >> $GITHUB_OUTPUT
         else
-          # Check time to determine if clock_in or clock_out
+          # Auto-determine based on UTC time
           hour=$(date -u +%H)
           if [ "$hour" = "01" ]; then
             echo "cmd=clock_in" >> $GITHUB_OUTPUT
@@ -61,17 +64,21 @@ jobs:
           fi
         fi
     
-    # Run the bot
-    - name: Run reminder bot
+    # Run the reminder bot
+    - name: 🤖 Send reminder
       env:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        NODE_ENV: production
       run: |
+        echo "🚀 Running command: ${{ steps.command.outputs.cmd }}"
         npm run start ${{ steps.command.outputs.cmd }}
     
-    # Log success
-    - name: Log result
+    # Log execution result
+    - name: 📊 Log execution
       run: |
-        echo "✅ Reminder sent successfully!"
-        echo "Command: ${{ steps.command.outputs.cmd }}"
-        echo "Time: $(date)"
+        echo "✅ Reminder execution completed!"
+        echo "📍 Command: ${{ steps.command.outputs.cmd }}"
+        echo "🕐 UTC Time: $(date -u)"
+        echo "🕐 WIB Time: $(TZ='Asia/Jakarta' date)"
+        echo "📅 Date: $(date -u +%Y-%m-%d)"
