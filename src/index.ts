@@ -19,6 +19,15 @@ async function main() {
       case 'test':
         success = await bot.testBot();
         break;
+        case 'motivational':
+        success = await bot.sendMotivationalQuote();
+        break;
+      case 'humor':
+        success = await bot.sendFunQuote();
+        break;
+      case 'wisdom':
+        success = await bot.sendWisdomQuote();
+        break;
       default:
         console.error('❌ Invalid command. Use: clock_in, clock_out, or test');
         process.exit(1);
