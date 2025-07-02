@@ -60,7 +60,7 @@ jobs:
           elif [ "$hour" = "10" ]; then
             echo "cmd=clock_out" >> $GITHUB_OUTPUT
           else
-            echo "cmd=test" >> $GITHUB_OUTPUT
+            echo "cmd=wisdom" >> $GITHUB_OUTPUT
           fi
         fi
     
